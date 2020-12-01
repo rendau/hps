@@ -2,22 +2,26 @@ package api
 
 import (
 	"context"
-	"github.com/rendau/gms_temp/internal/interfaces"
 	"net/http"
 	"time"
+
+	"github.com/rendau/gms_temp/internal/interfaces"
 )
 
 type St struct {
 	lg interfaces.Logger
 
+	targetUri string
+
 	server *http.Server
 	lChan  chan error
 }
 
-func New(lg interfaces.Logger, listen string) *St {
+func New(lg interfaces.Logger, listen, targetUri string) *St {
 	api := &St{
-		lg:    lg,
-		lChan: make(chan error, 1),
+		lg:        lg,
+		targetUri: targetUri,
+		lChan:     make(chan error, 1),
 	}
 
 	api.server = &http.Server{

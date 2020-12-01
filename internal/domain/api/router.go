@@ -1,14 +1,15 @@
 package api
 
 import (
-	"github.com/gorilla/mux"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func (a *St) router() http.Handler {
 	r := mux.NewRouter()
 
-	r.PathPrefix("/").HandlerFunc(a.hRoot).Methods("GET")
+	r.PathPrefix("/").HandlerFunc(a.hRoot)
 
-	return r
+	return a.middleware(r)
 }

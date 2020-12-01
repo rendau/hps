@@ -2,15 +2,16 @@ package cmd
 
 import (
 	"context"
-	"github.com/rendau/gms_temp/internal/adapters/logger/zap"
-	"github.com/rendau/gms_temp/internal/domain/api"
-	"github.com/spf13/viper"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/rendau/gms_temp/internal/adapters/logger/zap"
+	"github.com/rendau/gms_temp/internal/domain/api"
+	"github.com/spf13/viper"
 )
 
 func Execute() {
@@ -31,6 +32,7 @@ func Execute() {
 	app.api = api.New(
 		app.lg,
 		viper.GetString("http_listen"),
+		viper.GetString("target_uri"),
 	)
 
 	app.lg.Infow(
@@ -73,6 +75,7 @@ func loadConf() {
 	viper.AutomaticEnv()
 
 	// viper.Set("some.url", uriRPadSlash(viper.GetString("some.url")))
+	viper.Set("target_uri", strings.TrimSuffix(viper.GetString("target_uri"), "/"))
 }
 
 func uriRPadSlash(uri string) string {
