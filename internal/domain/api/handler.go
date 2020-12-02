@@ -43,6 +43,7 @@ func (a *St) hRoot(w http.ResponseWriter, r *http.Request) {
 
 	for _, cookie := range resp.Cookies() {
 		cookie.Domain = ""
+		cookie.SameSite = http.SameSiteNoneMode
 		http.SetCookie(w, cookie)
 	}
 
