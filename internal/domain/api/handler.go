@@ -52,10 +52,16 @@ func (a *St) hRoot(w http.ResponseWriter, r *http.Request) {
 
 	a.lg.Info("Host: " + r.Host)
 
+	for k, hv := range resp.Header {
+		a.lg.Infof("   %s: %v", k, hv)
+	}
+
 	if r.Host != "" {
 		if i := strings.LastIndexByte(r.Host, ':'); i > -1 {
 			a.lg.Info("Host-domain: " + r.Host[:i])
 			domainFromHost = r.Host[:i]
+		} else {
+			domainFromHost = r.Host
 		}
 	}
 
