@@ -3,7 +3,6 @@ package api
 import (
 	"io"
 	"net/http"
-	"net/url"
 )
 
 func (a *St) hRoot(w http.ResponseWriter, r *http.Request) {
@@ -11,6 +10,7 @@ func (a *St) hRoot(w http.ResponseWriter, r *http.Request) {
 
 	reqHeaders := r.Header
 
+	reqHHost := reqHeaders.Get("Host")
 	reqHOrigin := reqHeaders.Get("Origin")
 
 	if reqHeaders.Get("X-Real-IP") == "" &&
@@ -42,14 +42,14 @@ func (a *St) hRoot(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", reqHOrigin)
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
-	originDomain := ""
-
-	if originUrl, err := url.Parse(reqHOrigin); err == nil {
-		originDomain = originUrl.Hostname()
-	}
+	// originDomain := ""
+	//
+	// if originUrl, err := url.Parse(reqHOrigin); err == nil {
+	// 	originDomain = originUrl.Hostname()
+	// }
 
 	for _, cookie := range resp.Cookies() {
-		cookie.Domain = originDomain
+		cookie.Domain = reqHHost
 		http.SetCookie(w, cookie)
 	}
 
