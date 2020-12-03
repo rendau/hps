@@ -50,8 +50,11 @@ func (a *St) hRoot(w http.ResponseWriter, r *http.Request) {
 
 	domainFromHost := ""
 
+	a.lg.Info("Host: " + r.Host)
+
 	if r.Host != "" {
 		if i := strings.LastIndexByte(r.Host, ':'); i > -1 {
+			a.lg.Info("Host-domain: " + r.Host[:i])
 			domainFromHost = r.Host[:i]
 		}
 	}
