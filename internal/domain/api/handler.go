@@ -48,8 +48,6 @@ func (a *St) hRoot(w http.ResponseWriter, r *http.Request) {
 		originDomain = originUrl.Hostname()
 	}
 
-	a.lg.Info()
-
 	for _, cookie := range resp.Cookies() {
 		cookie.Domain = originDomain
 		http.SetCookie(w, cookie)
