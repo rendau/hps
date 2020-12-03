@@ -52,7 +52,7 @@ func (a *St) hRoot(w http.ResponseWriter, r *http.Request) {
 
 	a.lg.Info("Host: " + r.Host)
 
-	for k, hv := range resp.Header {
+	for k, hv := range reqHeaders {
 		a.lg.Infof("   %s: %v", k, hv)
 	}
 
