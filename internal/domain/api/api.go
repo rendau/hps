@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rendau/gms_temp/internal/interfaces"
+	"github.com/rendau/hps/internal/interfaces"
 )
 
 type St struct {

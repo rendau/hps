@@ -1,6 +1,6 @@
 package main
 
-import "github.com/rendau/gms_temp/cmd"
+import "github.com/rendau/hps/cmd"
 
 func main() {
 	cmd.Execute()

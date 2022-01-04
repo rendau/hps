@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/rendau/gms_temp/internal/adapters/logger/zap"
-	"github.com/rendau/gms_temp/internal/domain/api"
+	"github.com/rendau/hps/internal/adapters/logger/zap"
+	"github.com/rendau/hps/internal/domain/api"
 	"github.com/spf13/viper"
 )
 

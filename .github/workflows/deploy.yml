@@ -9,22 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OWNER: rendau
-      REPO: hps
       IMAGE: hps
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
       - name: Docker login
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          docker login -u $OWNER -p $GITHUB_TOKEN docker.pkg.github.com
+          echo ${{ secrets.CR_PAT }} | docker login -u $OWNER --password-stdin ghcr.io
 
       - name: Docker build
         run: |
-          docker build -t docker.pkg.github.com/$OWNER/$REPO/$IMAGE:latest .
+          docker build -t ghcr.io/$OWNER/$IMAGE:latest .
 
       - name: Docker push
         run: |
-          docker push docker.pkg.github.com/$OWNER/$REPO/$IMAGE:latest
