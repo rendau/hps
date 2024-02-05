@@ -1,23 +1,11 @@
-FROM golang:1.17 as builder
-
-WORKDIR /app
-
-COPY go.mod .
-COPY go.sum .
-RUN go mod download
-
-COPY . .
-
-RUN make
-
-
-
 FROM alpine:latest
 
-RUN apk add --no-cache --upgrade ca-certificates tzdata
+RUN apk add --no-cache --upgrade ca-certificates tzdata curl
 
 WORKDIR /app
 
-COPY --from=builder /app/cmd/build/* ./
+COPY ./cmd/build/. ./
+
+HEALTHCHECK --start-period=4s --interval=10s --timeout=2s --retries=3 CMD curl -f http://localhost/healthcheck || false
 
 CMD ["./svc"]
