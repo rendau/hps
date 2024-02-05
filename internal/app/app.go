@@ -35,13 +35,15 @@ func (a *App) Init() {
 
 	// handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		startTime := time.Now()
+		if conf.Debug {
+			startTime := time.Now()
 
-		defer func() {
-			if r.Context().Err() != nil {
-				slog.Warn("request canceled", "method", r.Method, "url", r.URL.String(), "duration", time.Since(startTime).String())
-			}
-		}()
+			defer func() {
+				if r.Context().Err() != nil {
+					slog.Warn("request canceled", "method", r.Method, "url", r.URL.String(), "duration", time.Since(startTime).String())
+				}
+			}()
+		}
 
 		if conf.TargetTimeout > 0 {
 			ctx, cancel := context.WithTimeout(r.Context(), conf.TargetTimeout)
