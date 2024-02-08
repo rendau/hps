@@ -12,8 +12,13 @@ import (
 	"time"
 )
 
+const (
+	HealthcheckPort = "3003"
+)
+
 type App struct {
-	httpServer *http.Server
+	httpServer        *http.Server
+	healthcheckServer *http.Server
 
 	exitCode int
 }
@@ -54,13 +59,23 @@ func (a *App) Init() {
 		proxy.ServeHTTP(w, r)
 	})
 
-	// server
+	// http server
 	a.httpServer = &http.Server{
 		Addr:              ":" + conf.HttpPort,
 		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       2 * time.Minute,
 		MaxHeaderBytes:    300 * 1024,
+	}
+
+	// healthcheck server
+	a.healthcheckServer = &http.Server{
+		Addr: ":" + HealthcheckPort,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}),
+		ReadHeaderTimeout: 3 * time.Second,
+		ReadTimeout:       3 * time.Minute,
 	}
 }
 
@@ -76,6 +91,17 @@ func (a *App) Start() {
 			}
 		}()
 		slog.Info("http-server started " + a.httpServer.Addr)
+	}
+
+	// healthcheck server
+	{
+		go func() {
+			err := a.healthcheckServer.ListenAndServe()
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				errCheck(err, "healthcheck-server stopped")
+			}
+		}()
+		slog.Info("healthcheck-server started " + a.healthcheckServer.Addr)
 	}
 }
 
@@ -97,6 +123,17 @@ func (a *App) Stop() {
 
 		if err := a.httpServer.Shutdown(ctx); err != nil {
 			slog.Error("http-server shutdown error", "error", err)
+			a.exitCode = 1
+		}
+	}
+
+	// healthcheck server
+	{
+		ctx, ctxCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer ctxCancel()
+
+		if err := a.healthcheckServer.Shutdown(ctx); err != nil {
+			slog.Error("healthcheck-server shutdown error", "error", err)
 			a.exitCode = 1
 		}
 	}
