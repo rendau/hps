@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -28,6 +29,10 @@ func (a *App) Init() {
 
 	// reverse proxy
 	proxy := &httputil.ReverseProxy{
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: 100,
+			TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+		},
 		Rewrite: func(r *httputil.ProxyRequest) {
 			r.SetURL(conf.TargetUrl)
 			r.Out.Header["X-Forwarded-For"] = r.In.Header["X-Forwarded-For"]
