@@ -36,6 +36,9 @@ func (a *App) Init() {
 		Rewrite: func(r *httputil.ProxyRequest) {
 			r.SetURL(conf.TargetUrl)
 			r.Out.Header["X-Forwarded-For"] = r.In.Header["X-Forwarded-For"]
+			for k, v := range conf.TargetHeaders {
+				r.Out.Header.Add(k, v)
+			}
 			r.SetXForwarded()
 			if conf.TargetHost != "" {
 				r.Out.Host = conf.TargetHost

@@ -8,14 +8,15 @@ import (
 )
 
 var conf = struct {
-	Debug            bool          `env:"DEBUG" envDefault:"false"`
-	HttpPort         string        `env:"HTTP_PORT" envDefault:"80"`
-	HttpCors         bool          `env:"HTTP_CORS" envDefault:"false"`
-	TargetUrlStr     string        `env:"TARGET_URL"`
-	TargetUrl        *url.URL      `env:"-"`
-	TargetHost       string        `env:"TARGET_HOST"`
-	TargetTimeoutStr string        `env:"TARGET_TIMEOUT"`
-	TargetTimeout    time.Duration `env:"-"`
+	Debug            bool              `env:"DEBUG" envDefault:"false"`
+	HttpPort         string            `env:"HTTP_PORT" envDefault:"80"`
+	HttpCors         bool              `env:"HTTP_CORS" envDefault:"false"`
+	TargetUrlStr     string            `env:"TARGET_URL"`
+	TargetUrl        *url.URL          `env:"-"`
+	TargetHost       string            `env:"TARGET_HOST"`
+	TargetTimeoutStr string            `env:"TARGET_TIMEOUT"`
+	TargetTimeout    time.Duration     `env:"-"`
+	TargetHeaders    map[string]string `env:"TARGET_HEADERS"`
 }{}
 
 func init() {
@@ -39,5 +40,9 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
+	}
+
+	if conf.TargetHeaders == nil {
+		conf.TargetHeaders = make(map[string]string)
 	}
 }
