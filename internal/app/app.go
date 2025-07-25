@@ -25,7 +25,7 @@ type App struct {
 }
 
 func (a *App) Init() {
-	//var err error
+	// var err error
 
 	// reverse proxy
 	proxy := &httputil.ReverseProxy{
@@ -50,6 +50,11 @@ func (a *App) Init() {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if conf.Debug {
 			startTime := time.Now()
+
+			// access log
+			defer func() {
+				slog.Info("request "+r.Method+" "+r.URL.String(), "method", r.Method, "url", r.URL.String(), "duration", time.Since(startTime).String())
+			}()
 
 			defer func() {
 				if r.Context().Err() != nil {
