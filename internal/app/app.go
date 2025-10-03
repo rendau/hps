@@ -27,6 +27,14 @@ type App struct {
 func (a *App) Init() {
 	// var err error
 
+	// logger
+	{
+		if !conf.Debug {
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+			slog.SetDefault(logger)
+		}
+	}
+
 	// reverse proxy
 	proxy := &httputil.ReverseProxy{
 		Transport: &http.Transport{
