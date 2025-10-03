@@ -7,3 +7,4 @@ release/*
 build/
 conf.yml
 /svc
+.env
