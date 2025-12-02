@@ -2,12 +2,10 @@ package app
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/http/httputil"
 	"os"
 	"os/signal"
 	"time"
@@ -35,50 +33,11 @@ func (a *App) Init() {
 		}
 	}
 
-	// reverse proxy
-	proxy := &httputil.ReverseProxy{
-		Transport: &http.Transport{
-			MaxIdleConnsPerHost: 100,
-			TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
-		},
-		Rewrite: func(r *httputil.ProxyRequest) {
-			r.SetURL(conf.TargetUrl)
-			r.Out.Header["X-Forwarded-For"] = r.In.Header["X-Forwarded-For"]
-			for k, v := range conf.TargetHeaders {
-				r.Out.Header.Add(k, v)
-			}
-			r.SetXForwarded()
-			if conf.TargetHost != "" {
-				r.Out.Host = conf.TargetHost
-			}
-		},
+	handler := proxyGetHandler()
+
+	if conf.HttpCors {
+		handler = mwCors(handler)
 	}
-
-	// handler
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if conf.Debug {
-			startTime := time.Now()
-
-			// access log
-			defer func() {
-				slog.Info("request "+r.Method+" "+r.URL.String(), "method", r.Method, "url", r.URL.String(), "duration", time.Since(startTime).String())
-			}()
-
-			defer func() {
-				if r.Context().Err() != nil {
-					slog.Warn("request canceled", "method", r.Method, "url", r.URL.String(), "duration", time.Since(startTime).String())
-				}
-			}()
-		}
-
-		if conf.TargetTimeout > 0 {
-			ctx, cancel := context.WithTimeout(r.Context(), conf.TargetTimeout)
-			defer cancel()
-			r = r.WithContext(ctx)
-		}
-
-		proxy.ServeHTTP(w, r)
-	})
 
 	// http server
 	a.httpServer = &http.Server{
@@ -89,7 +48,7 @@ func (a *App) Init() {
 		MaxHeaderBytes:    300 * 1024,
 	}
 
-	// healthcheck server
+	// health check server
 	a.healthcheckServer = &http.Server{
 		Addr: ":" + HealthcheckPort,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -114,7 +73,7 @@ func (a *App) Start() {
 		slog.Info("http-server started " + a.httpServer.Addr)
 	}
 
-	// healthcheck server
+	// health check server
 	{
 		go func() {
 			err := a.healthcheckServer.ListenAndServe()
@@ -148,7 +107,7 @@ func (a *App) Stop() {
 		}
 	}
 
-	// healthcheck server
+	// health check server
 	{
 		ctx, ctxCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer ctxCancel()

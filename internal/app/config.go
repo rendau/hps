@@ -30,7 +30,6 @@ func init() {
 	if conf.TargetUrlStr == "" {
 		panic("TARGET_URL is required")
 	}
-
 	conf.TargetUrl, err = url.Parse(conf.TargetUrlStr)
 	if err != nil {
 		panic(err)
