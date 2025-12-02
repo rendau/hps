@@ -11,12 +11,12 @@ jobs:
       OWNER: rendau
       IMAGE: hps:1.0
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
-          go-version: '>=1.21.0'
-          cache: true
+          go-version-file: go.mod
+          cache: false
 
       - run: go mod download
 
