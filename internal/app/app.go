@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/rendau/hps/internal/app/middleware"
 )
 
 const (
@@ -35,8 +37,13 @@ func (a *App) Init() {
 
 	handler := proxyGetHandler()
 
+	handler = middleware.NewLogKafka(
+		conf.KafkaUrl,
+		conf.KafkaTopic,
+	).Middleware(handler)
+
 	if conf.HttpCors {
-		handler = mwCors(handler)
+		handler = middleware.Cors(handler)
 	}
 
 	// http server

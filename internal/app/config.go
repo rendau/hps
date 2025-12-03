@@ -18,6 +18,9 @@ var conf = struct {
 	TargetTimeoutStr string            `env:"TARGET_TIMEOUT"`
 	TargetTimeout    time.Duration     `env:"-"`
 	TargetHeaders    map[string]string `env:"TARGET_HEADERS"`
+	LogKafka         bool              `env:"LOG_KAFKA"`
+	KafkaUrl         string            `env:"KAFKA_URL"`
+	KafkaTopic       string            `env:"KAFKA_TOPIC"`
 }{}
 
 func init() {
