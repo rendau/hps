@@ -37,10 +37,12 @@ func (a *App) Init() {
 
 	handler := proxyGetHandler()
 
-	handler = middleware.NewLogKafka(
-		conf.KafkaUrl,
-		conf.KafkaTopic,
-	).Middleware(handler)
+	if conf.LogKafka {
+		handler = middleware.NewLogKafka(
+			conf.KafkaUrl,
+			conf.KafkaTopic,
+		).Middleware(handler)
+	}
 
 	if conf.HttpCors {
 		handler = middleware.Cors(handler)
