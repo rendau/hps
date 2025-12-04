@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"io"
@@ -57,9 +58,9 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 		rw := newResponseWriter(w)
 		next.ServeHTTP(rw, r)
 
-		normalizedReqBody, _ := normalizeJSON(reqBody)
+		normalizedReqBody, _ := normalizeJSON(reqBody, false)
 
-		normalizedRepBody, ok := normalizeJSON(rw.body.Bytes())
+		normalizedRepBody, ok := normalizeJSON(rw.body.Bytes(), rw.Header().Get("Content-Encoding") == "gzip")
 		if !ok {
 			// slog.Error("response body is not valid", "method", r.Method, "path", r.URL.Path, "status", rw.statusCode, "body", string(rw.body.Bytes()))
 		}
@@ -124,7 +125,14 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
-func normalizeJSON(data []byte) (json.RawMessage, bool) {
+func normalizeJSON(data []byte, isGzip bool) (json.RawMessage, bool) {
+	if isGzip {
+		gzipReader, err := gzip.NewReader(bytes.NewReader(data))
+		if err == nil {
+			defer gzipReader.Close()
+			data, _ = io.ReadAll(gzipReader)
+		}
+	}
 	if len(data) == 0 {
 		return json.RawMessage("null"), true
 	}
