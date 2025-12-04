@@ -28,6 +28,8 @@ func NewLogKafka(host, topic string) *LogKafka {
 		Async:                  true,
 	}
 
+	slog.Info("kafka writer created", "host", host, "topic", topic)
+
 	return &LogKafka{writer: writer}
 }
 
@@ -82,6 +84,8 @@ func (m *LogKafka) sendToKafka(msg *kafkaMessage) {
 	if err != nil {
 		slog.Error("failed to write message to kafka", "error", err, "msg", msg)
 	}
+
+	slog.Info("message sent to kafka", "msg", msg)
 }
 
 func (m *LogKafka) Close() {
