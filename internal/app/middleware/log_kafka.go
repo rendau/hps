@@ -57,13 +57,20 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 		rw := newResponseWriter(w)
 		next.ServeHTTP(rw, r)
 
+		normalizedReqBody, _ := normalizeJSON(reqBody)
+
+		normalizedRepBody, ok := normalizeJSON(rw.body.Bytes())
+		if !ok {
+			slog.Error("response body is not valid", "method", r.Method, "path", r.URL.Path, "status", rw.statusCode, "body", string(rw.body.Bytes()))
+		}
+
 		go m.sendToKafka(&kafkaMessage{
 			Ts:        time.Now().UTC(),
 			Method:    r.Method,
 			Path:      r.URL.Path,
-			ReqBody:   normalizeJSON(reqBody),
+			ReqBody:   normalizedReqBody,
 			RepStatus: rw.statusCode,
-			RepBody:   normalizeJSON(rw.body.Bytes()),
+			RepBody:   normalizedRepBody,
 		})
 	})
 }
@@ -117,12 +124,12 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
-func normalizeJSON(data []byte) json.RawMessage {
+func normalizeJSON(data []byte) (json.RawMessage, bool) {
 	if len(data) == 0 {
-		return json.RawMessage("null")
+		return json.RawMessage("null"), true
 	}
 	if json.Valid(data) {
-		return data
+		return data, true
 	}
-	return json.RawMessage("null")
+	return json.RawMessage("null"), false
 }
