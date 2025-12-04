@@ -85,7 +85,7 @@ func (m *LogKafka) sendToKafka(msg *kafkaMessage) {
 		slog.Error("failed to write message to kafka", "error", err, "msg", msg)
 	}
 
-	slog.Info("message sent to kafka", "msg", msg)
+	// slog.Info("message sent to kafka", "msg", msg)
 }
 
 func (m *LogKafka) Close() {
