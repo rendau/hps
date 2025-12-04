@@ -61,7 +61,7 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 
 		normalizedRepBody, ok := normalizeJSON(rw.body.Bytes())
 		if !ok {
-			slog.Error("response body is not valid", "method", r.Method, "path", r.URL.Path, "status", rw.statusCode, "body", string(rw.body.Bytes()))
+			// slog.Error("response body is not valid", "method", r.Method, "path", r.URL.Path, "status", rw.statusCode, "body", string(rw.body.Bytes()))
 		}
 
 		go m.sendToKafka(&kafkaMessage{
