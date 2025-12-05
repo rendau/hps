@@ -33,5 +33,11 @@ func proxyGetHandler() http.Handler {
 				r.Out.Host = conf.TargetHost
 			}
 		},
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			if r.Context().Err() != nil {
+				return
+			}
+			w.WriteHeader(http.StatusBadGateway)
+		},
 	}
 }
