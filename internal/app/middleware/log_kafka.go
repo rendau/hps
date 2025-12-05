@@ -21,8 +21,6 @@ type LogKafka struct {
 }
 
 func NewLogKafka(host, topic string, filterRules []string) *LogKafka {
-	parseFilterRules(filterRules)
-
 	if host == "" || topic == "" {
 		return &LogKafka{}
 	}
