@@ -56,7 +56,7 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !m.filter(r.Method, r.URL.Path) {
-			slog.Info("filter rejected", "method", r.Method, "path", r.URL.Path)
+			// slog.Info("filter rejected", "method", r.Method, "path", r.URL.Path)
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -148,7 +148,7 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 
 func normalizeJSON(data []byte, isGzip bool) (json.RawMessage, bool) {
 	if isGzip {
-		slog.Info("gzip response body detected")
+		// slog.Info("gzip response body detected")
 		gzipReader, err := gzip.NewReader(bytes.NewReader(data))
 		if err == nil {
 			defer gzipReader.Close()
