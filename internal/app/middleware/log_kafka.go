@@ -56,6 +56,7 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !m.filter(r.Method, r.URL.Path) {
+			slog.Info("filter rejected", "method", r.Method, "path", r.URL.Path)
 			next.ServeHTTP(w, r)
 			return
 		}
