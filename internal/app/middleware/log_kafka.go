@@ -8,39 +8,45 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/segmentio/kafka-go"
 )
 
 type LogKafka struct {
-	writer *kafka.Writer
+	writer      *kafka.Writer
+	filterRules []FilterRule
 }
 
-func NewLogKafka(host, topic string) *LogKafka {
+func NewLogKafka(host, topic string, filterRules []string) *LogKafka {
+	parseFilterRules(filterRules)
+
 	if host == "" || topic == "" {
 		return &LogKafka{}
 	}
 
-	writer := &kafka.Writer{
-		Addr:                   kafka.TCP(host),
-		Topic:                  topic,
-		AllowAutoTopicCreation: true,
-		Async:                  true,
+	return &LogKafka{
+		writer: &kafka.Writer{
+			Addr:                   kafka.TCP(host),
+			Topic:                  topic,
+			AllowAutoTopicCreation: true,
+			Async:                  true,
+		},
+		filterRules: parseFilterRules(filterRules),
 	}
-
-	slog.Info("kafka writer created", "host", host, "topic", topic)
-
-	return &LogKafka{writer: writer}
 }
 
 type kafkaMessage struct {
-	Ts        time.Time       `json:"ts"`
-	Method    string          `json:"method"`
-	Path      string          `json:"path"`
-	ReqBody   json.RawMessage `json:"req_body"`
-	RepStatus int             `json:"rep_status"`
-	RepBody   json.RawMessage `json:"rep_body"`
+	Ts        time.Time         `json:"ts"`
+	Method    string            `json:"method"`
+	Path      string            `json:"path"`
+	Query     string            `json:"query"`
+	Headers   map[string]string `json:"headers"`
+	ReqBody   json.RawMessage   `json:"req_body"`
+	RepStatus int               `json:"rep_status"`
+	RepBody   json.RawMessage   `json:"rep_body"`
 }
 
 func (m *LogKafka) Middleware(next http.Handler) http.Handler {
@@ -48,7 +54,14 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 		return next
 	}
 
+	slog.Info("Kafka writer created", "host", m.writer.Addr.String(), "topic", m.writer.Topic)
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !m.filter(r.Method, r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		var reqBody []byte
 		if r.Body != nil {
 			reqBody, _ = io.ReadAll(r.Body)
@@ -65,10 +78,17 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 			// slog.Error("response body is not valid", "method", r.Method, "path", r.URL.Path, "status", rw.statusCode, "body", string(rw.body.Bytes()))
 		}
 
+		headers := make(map[string]string, len(rw.Header()))
+		for k, v := range rw.Header() {
+			headers[k] = strings.Join(v, ", ")
+		}
+
 		go m.sendToKafka(&kafkaMessage{
 			Ts:        time.Now().UTC(),
 			Method:    r.Method,
 			Path:      r.URL.Path,
+			Query:     r.URL.RawQuery,
+			Headers:   headers,
 			ReqBody:   normalizedReqBody,
 			RepStatus: rw.statusCode,
 			RepBody:   normalizedRepBody,
@@ -97,7 +117,9 @@ func (m *LogKafka) sendToKafka(msg *kafkaMessage) {
 }
 
 func (m *LogKafka) Close() {
-	_ = m.writer.Close()
+	if m.writer != nil {
+		_ = m.writer.Close()
+	}
 }
 
 // responseWriter обёртка для захвата ответа
@@ -127,10 +149,16 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 
 func normalizeJSON(data []byte, isGzip bool) (json.RawMessage, bool) {
 	if isGzip {
+		slog.Info("gzip response body detected")
 		gzipReader, err := gzip.NewReader(bytes.NewReader(data))
 		if err == nil {
 			defer gzipReader.Close()
-			data, _ = io.ReadAll(gzipReader)
+			data, err = io.ReadAll(gzipReader)
+			if err != nil {
+				data = nil
+			}
+		} else {
+			data = nil
 		}
 	}
 	if len(data) == 0 {
@@ -140,4 +168,74 @@ func normalizeJSON(data []byte, isGzip bool) (json.RawMessage, bool) {
 		return data, true
 	}
 	return json.RawMessage("null"), false
+}
+
+type FilterRule struct {
+	Method  string // пустой = любой метод
+	Pattern string
+}
+
+func (r *FilterRule) String() string {
+	if r.Method != "" {
+		return "{" + r.Method + " " + r.Pattern + "}"
+	}
+	return r.Pattern
+}
+
+func parseFilterRules(src []string) []FilterRule {
+	result := make([]FilterRule, 0, len(src))
+
+	for _, r := range src {
+		r = strings.TrimSpace(r)
+		method := ""
+		pattern := ""
+		parts := strings.SplitN(r, ":", 2)
+		switch len(parts) {
+		case 1:
+			pattern = parts[0]
+		case 2:
+			method = parts[0]
+			pattern = parts[1]
+		default:
+			slog.Error("invalid filter rule", "rule", r)
+			continue
+		}
+		if pattern == "" {
+			slog.Error("empty filter rule", "rule", r)
+			continue
+		}
+		result = append(result, FilterRule{
+			Method:  strings.ToUpper(method),
+			Pattern: strings.ToLower("/" + strings.Trim(pattern, "/")),
+		})
+	}
+
+	// print parsed rules
+	slog.Info("Applied filter rules:")
+	for _, r := range result {
+		slog.Info(r.String())
+	}
+
+	return result
+}
+
+func (m *LogKafka) filter(method, pathStr string) bool {
+	if len(m.filterRules) == 0 {
+		return true
+	}
+
+	pathStr = strings.ToLower("/" + strings.Trim(pathStr, "/"))
+	method = strings.ToUpper(method)
+
+	for _, rule := range m.filterRules {
+		if rule.Method != "" && rule.Method != method {
+			continue
+		}
+
+		if matched, _ := path.Match(rule.Pattern, pathStr); matched {
+			return true
+		}
+	}
+
+	return false
 }

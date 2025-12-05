@@ -16,6 +16,7 @@ func proxyGetHandler() http.Handler {
 				Timeout:   2 * time.Second,
 				KeepAlive: 30 * time.Second,
 			}).DialContext,
+			DisableCompression:    true,
 			TLSHandshakeTimeout:   2 * time.Second,
 			ResponseHeaderTimeout: conf.TargetTimeout,
 			MaxIdleConnsPerHost:   100,

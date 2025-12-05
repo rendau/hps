@@ -21,6 +21,7 @@ var conf = struct {
 	LogKafka         bool              `env:"LOG_KAFKA"`
 	KafkaUrl         string            `env:"KAFKA_URL"`
 	KafkaTopic       string            `env:"KAFKA_TOPIC"`
+	KafkaFilters     []string          `env:"KAFKA_FILTERS"`
 }{}
 
 func init() {
@@ -29,6 +30,10 @@ func init() {
 	if err := env.Parse(&conf); err != nil {
 		panic(err)
 	}
+
+	// for _, filter := range conf.KafkaFilters {
+	// 	fmt.Printf("'%s'\n", filter)
+	// }
 
 	if conf.TargetUrlStr == "" {
 		panic("TARGET_URL is required")

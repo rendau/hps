@@ -41,6 +41,7 @@ func (a *App) Init() {
 		handler = middleware.NewLogKafka(
 			conf.KafkaUrl,
 			conf.KafkaTopic,
+			conf.KafkaFilters,
 		).Middleware(handler)
 	}
 
