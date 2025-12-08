@@ -44,7 +44,7 @@ type kafkaMessage struct {
 	ReqBody   json.RawMessage `json:"req_body"`
 	RepStatus int             `json:"rep_status"`
 	RepBody   json.RawMessage `json:"rep_body"`
-	SessionID string          `json:"session_id,omitempty"`
+	SessionID string          `json:"session_id"`
 }
 
 func (m *LogKafka) Middleware(next http.Handler) http.Handler {
