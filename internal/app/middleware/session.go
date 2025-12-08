@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -34,6 +35,8 @@ func (m *Session) Middleware(next http.Handler) http.Handler {
 	if m.name == "" {
 		return next
 	}
+
+	slog.Info("Session middleware created", "name", m.name)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// read existing cookie
