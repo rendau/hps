@@ -99,14 +99,9 @@ func (m *LogKafka) sendToKafka(msg *kafkaMessage) {
 		return
 	}
 
-	key := msg.SessionID
-	if key == "" {
-		key = msg.Method + " " + msg.Path
-	}
-
 	err = m.writer.WriteMessages(context.Background(),
 		kafka.Message{
-			Key:   []byte(key),
+			Key:   []byte(msg.Method + " " + msg.Path),
 			Value: data,
 		},
 	)
