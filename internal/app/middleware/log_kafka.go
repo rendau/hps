@@ -37,14 +37,14 @@ func NewLogKafka(host, topic string, filterRules []string) *LogKafka {
 }
 
 type kafkaMessage struct {
-	Ts        time.Time         `json:"ts"`
-	Method    string            `json:"method"`
-	Path      string            `json:"path"`
-	Query     string            `json:"query"`
-	Headers   map[string]string `json:"headers"`
-	ReqBody   json.RawMessage   `json:"req_body"`
-	RepStatus int               `json:"rep_status"`
-	RepBody   json.RawMessage   `json:"rep_body"`
+	Ts        time.Time       `json:"ts"`
+	Method    string          `json:"method"`
+	Path      string          `json:"path"`
+	Query     string          `json:"query"`
+	ReqBody   json.RawMessage `json:"req_body"`
+	RepStatus int             `json:"rep_status"`
+	RepBody   json.RawMessage `json:"rep_body"`
+	SessionID string          `json:"session_id,omitempty"`
 }
 
 func (m *LogKafka) Middleware(next http.Handler) http.Handler {
@@ -77,20 +77,15 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 			// slog.Error("response body is not valid", "method", r.Method, "path", r.URL.Path, "status", rw.statusCode, "body", string(rw.body.Bytes()))
 		}
 
-		headers := make(map[string]string, len(rw.Header()))
-		for k, v := range rw.Header() {
-			headers[k] = strings.Join(v, ", ")
-		}
-
 		go m.sendToKafka(&kafkaMessage{
 			Ts:        time.Now().UTC(),
 			Method:    r.Method,
 			Path:      r.URL.Path,
 			Query:     r.URL.RawQuery,
-			Headers:   headers,
 			ReqBody:   normalizedReqBody,
 			RepStatus: rw.statusCode,
 			RepBody:   normalizedRepBody,
+			SessionID: ContextSessionID(r.Context()),
 		})
 	})
 }
@@ -102,9 +97,14 @@ func (m *LogKafka) sendToKafka(msg *kafkaMessage) {
 		return
 	}
 
+	key := msg.SessionID
+	if key == "" {
+		key = msg.Method + " " + msg.Path
+	}
+
 	err = m.writer.WriteMessages(context.Background(),
 		kafka.Message{
-			Key:   []byte(msg.Method + " " + msg.Path),
+			Key:   []byte(key),
 			Value: data,
 		},
 	)
