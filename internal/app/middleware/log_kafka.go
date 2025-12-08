@@ -85,7 +85,6 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 			ReqBody:   normalizedReqBody,
 			RepStatus: rw.statusCode,
 			RepBody:   normalizedRepBody,
-			SessionID: ContextSessionID(r.Context()),
 		})
 	})
 }

@@ -37,10 +37,6 @@ func (a *App) Init() {
 
 	handler := proxyGetHandler()
 
-	if conf.Session {
-		handler = middleware.NewSession(conf.SessionName).Middleware(handler)
-	}
-
 	if conf.LogKafka {
 		handler = middleware.NewLogKafka(
 			conf.KafkaUrl,
