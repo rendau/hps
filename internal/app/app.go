@@ -45,6 +45,10 @@ func (a *App) Init() {
 		).Middleware(handler)
 	}
 
+	if conf.Session && conf.SessionName != "" {
+		handler = middleware.Session(conf.SessionName, handler)
+	}
+
 	if conf.HttpCors {
 		handler = middleware.Cors(handler)
 	}

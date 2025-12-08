@@ -77,6 +77,8 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 			// slog.Error("response body is not valid", "method", r.Method, "path", r.URL.Path, "status", rw.statusCode, "body", string(rw.body.Bytes()))
 		}
 
+		sid := SessionIDFromContext(r.Context())
+
 		go m.sendToKafka(&kafkaMessage{
 			Ts:        time.Now().UTC(),
 			Method:    r.Method,
@@ -85,6 +87,7 @@ func (m *LogKafka) Middleware(next http.Handler) http.Handler {
 			ReqBody:   normalizedReqBody,
 			RepStatus: rw.statusCode,
 			RepBody:   normalizedRepBody,
+			SessionID: sid,
 		})
 	})
 }
