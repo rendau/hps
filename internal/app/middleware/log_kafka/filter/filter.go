@@ -15,6 +15,9 @@ func New(src []string) *Filter {
 
 	for _, srcItem := range src {
 		srcItem = strings.TrimSpace(srcItem)
+		if srcItem == "" {
+			continue
+		}
 		method, pattern := "", ""
 		parts := strings.SplitN(srcItem, ":", 2)
 		switch len(parts) {
