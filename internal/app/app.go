@@ -12,6 +12,8 @@ import (
 
 	"github.com/rendau/hps/internal/app/middleware/cors"
 	"github.com/rendau/hps/internal/app/middleware/log_kafka"
+	logKafkaFilterP "github.com/rendau/hps/internal/app/middleware/log_kafka/filter"
+	logKafkaProducerP "github.com/rendau/hps/internal/app/middleware/log_kafka/producer"
 )
 
 const (
@@ -21,6 +23,8 @@ const (
 type App struct {
 	httpServer        *http.Server
 	healthcheckServer *http.Server
+
+	kafkaProducer *logKafkaProducerP.Service
 
 	exitCode int
 }
@@ -42,12 +46,12 @@ func (a *App) Init() {
 	// middlewares
 	{
 		// kafka-log
-		if conf.LogKafka {
-			handler = log_kafka.New(
-				conf.KafkaUrl,
-				conf.KafkaTopic,
-				conf.KafkaFilters,
-			).Middleware(handler)
+		if conf.LogKafka && conf.KafkaUrl != "" && conf.KafkaTopic != "" {
+			a.kafkaProducer = logKafkaProducerP.New(conf.KafkaUrl, conf.KafkaTopic)
+
+			filter := logKafkaFilterP.New(conf.KafkaFilters)
+
+			handler = log_kafka.New(a.kafkaProducer, filter).Middleware(handler)
 		}
 
 		// cors
@@ -133,6 +137,11 @@ func (a *App) Stop() {
 			slog.Error("healthcheck-server shutdown error", "error", err)
 			a.exitCode = 1
 		}
+	}
+
+	// kafka producer
+	if a.kafkaProducer != nil {
+		a.kafkaProducer.Close()
 	}
 }
 
