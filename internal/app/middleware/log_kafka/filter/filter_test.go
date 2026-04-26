@@ -1,52 +1,50 @@
-package middleware
+package filter
 
-import (
-	"testing"
-)
+import "testing"
 
 type filterTestCase struct {
 	name       string
 	method     string
 	pathStr    string
-	filterRule []FilterRule
+	filterRule []string
 	expected   bool
 }
 
 func TestFilter(t *testing.T) {
 	tests := []filterTestCase{
 		{
-			name:    "custom url",
+			name:    "custom url 1",
 			method:  "GET",
 			pathStr: "/api/v3/product/basseyn-bestway-karkasnyy-steel-pro-splash-in-shade-244-h-51-sm-1688-l-56432",
-			filterRule: []FilterRule{
-				{Method: "GET", Pattern: "/api/v2/product/*"},
-				{Method: "GET", Pattern: "/api/v3/product/*"},
+			filterRule: []string{
+				"GET:/api/v2/product/*",
+				"GET:/api/v3/product/*",
 			},
 			expected: true,
 		},
 		{
-			name:    "custom url",
+			name:    "custom url 2",
 			method:  "GET",
 			pathStr: "/api/v3/product/smart-chasy-huawei-gt-6-46mm-cvet-chernyy-atm-b19",
-			filterRule: []FilterRule{
-				{Method: "GET", Pattern: "/api/v2/product/*"},
-				{Method: "GET", Pattern: "/api/v3/product/*"},
+			filterRule: []string{
+				"GET:/api/v2/product/*",
+				"GET:/api/v3/product/*",
 			},
 			expected: true,
 		},
 		{
-			name:       "no filter rules allow everything",
+			name:       "no filter rules deny everything",
 			method:     "GET",
 			pathStr:    "/any/path",
-			filterRule: []FilterRule{},
-			expected:   true,
+			filterRule: []string{},
+			expected:   false,
 		},
 		{
 			name:    "match specific method and path",
 			method:  "POST",
 			pathStr: "/submit/data",
-			filterRule: []FilterRule{
-				{Method: "POST", Pattern: "/submit/data"},
+			filterRule: []string{
+				"POST:/submit/data",
 			},
 			expected: true,
 		},
@@ -54,8 +52,8 @@ func TestFilter(t *testing.T) {
 			name:    "match any method with path pattern",
 			method:  "GET",
 			pathStr: "/api/item/123",
-			filterRule: []FilterRule{
-				{Pattern: "/api/item/*"},
+			filterRule: []string{
+				"/api/item/*",
 			},
 			expected: true,
 		},
@@ -63,8 +61,8 @@ func TestFilter(t *testing.T) {
 			name:    "match specific method with wildcard path",
 			method:  "DELETE",
 			pathStr: "/records/456",
-			filterRule: []FilterRule{
-				{Method: "DELETE", Pattern: "/records/*"},
+			filterRule: []string{
+				"DELETE:/records/*",
 			},
 			expected: true,
 		},
@@ -72,8 +70,8 @@ func TestFilter(t *testing.T) {
 			name:    "method mismatch",
 			method:  "GET",
 			pathStr: "/admin",
-			filterRule: []FilterRule{
-				{Method: "POST", Pattern: "/admin"},
+			filterRule: []string{
+				"POST:/admin",
 			},
 			expected: false,
 		},
@@ -81,8 +79,8 @@ func TestFilter(t *testing.T) {
 			name:    "no match due to path mismatch",
 			method:  "GET",
 			pathStr: "/different/path",
-			filterRule: []FilterRule{
-				{Method: "GET", Pattern: "/specific/path"},
+			filterRule: []string{
+				"GET:/specific/path",
 			},
 			expected: false,
 		},
@@ -90,8 +88,8 @@ func TestFilter(t *testing.T) {
 			name:    "case insensitivity in path",
 			method:  "GET",
 			pathStr: "/Mixed/Case/tEsT",
-			filterRule: []FilterRule{
-				{Pattern: "/mixed/case/test"},
+			filterRule: []string{
+				"/mixed/case/test",
 			},
 			expected: true,
 		},
@@ -99,8 +97,8 @@ func TestFilter(t *testing.T) {
 			name:    "case insensitivity in method",
 			method:  "get",
 			pathStr: "/case/test",
-			filterRule: []FilterRule{
-				{Method: "GET", Pattern: "/case/test"},
+			filterRule: []string{
+				"GET:/case/test",
 			},
 			expected: true,
 		},
@@ -108,8 +106,8 @@ func TestFilter(t *testing.T) {
 			name:    "empty path matches root",
 			method:  "GET",
 			pathStr: "",
-			filterRule: []FilterRule{
-				{Pattern: "/"},
+			filterRule: []string{
+				"/",
 			},
 			expected: true,
 		},
@@ -117,8 +115,8 @@ func TestFilter(t *testing.T) {
 			name:    "path trimming works",
 			method:  "GET",
 			pathStr: "///trim/test//",
-			filterRule: []FilterRule{
-				{Pattern: "/trim/test"},
+			filterRule: []string{
+				"/trim/test",
 			},
 			expected: true,
 		},
@@ -126,10 +124,10 @@ func TestFilter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			logKafka := &LogKafka{filterRules: tt.filterRule}
-			result := logKafka.filter(tt.method, tt.pathStr)
+			f := New(tt.filterRule)
+			result := f.Check(tt.method, tt.pathStr)
 			if result != tt.expected {
-				t.Errorf("filter(%q, %q) expected %v, got %v", tt.method, tt.pathStr, tt.expected, result)
+				t.Errorf("Check(%q, %q) expected %v, got %v", tt.method, tt.pathStr, tt.expected, result)
 			}
 		})
 	}

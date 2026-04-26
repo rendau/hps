@@ -16,10 +16,9 @@ func proxyGetHandler() http.Handler {
 				Timeout:   2 * time.Second,
 				KeepAlive: 30 * time.Second,
 			}).DialContext,
-			DisableCompression:    true,
-			TLSHandshakeTimeout:   2 * time.Second,
-			ResponseHeaderTimeout: conf.TargetTimeout,
-			MaxIdleConnsPerHost:   100,
+			DisableCompression:  true,
+			TLSHandshakeTimeout: 2 * time.Second,
+			MaxIdleConnsPerHost: 100,
 		},
 		Rewrite: func(r *httputil.ProxyRequest) {
 			r.SetURL(conf.TargetUrl)

@@ -10,7 +10,8 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/rendau/hps/internal/app/middleware"
+	"github.com/rendau/hps/internal/app/middleware/cors"
+	"github.com/rendau/hps/internal/app/middleware/log_kafka"
 )
 
 const (
@@ -35,22 +36,24 @@ func (a *App) Init() {
 		}
 	}
 
+	// proxy handler
 	handler := proxyGetHandler()
 
-	if conf.LogKafka {
-		handler = middleware.NewLogKafka(
-			conf.KafkaUrl,
-			conf.KafkaTopic,
-			conf.KafkaFilters,
-		).Middleware(handler)
-	}
+	// middlewares
+	{
+		// kafka-log
+		if conf.LogKafka {
+			handler = log_kafka.New(
+				conf.KafkaUrl,
+				conf.KafkaTopic,
+				conf.KafkaFilters,
+			).Middleware(handler)
+		}
 
-	if conf.Session && conf.SessionName != "" {
-		handler = middleware.Session(conf.SessionName, handler)
-	}
-
-	if conf.HttpCors {
-		handler = middleware.Cors(handler)
+		// cors
+		if conf.HttpCors {
+			handler = cors.Cors(handler)
+		}
 	}
 
 	// http server
