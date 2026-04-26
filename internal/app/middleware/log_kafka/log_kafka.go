@@ -53,6 +53,7 @@ func (m *Middleware) Middleware(next http.Handler) http.Handler {
 			ReqBody:   normalizeJSON(reqBody, false),
 			RepStatus: rw.statusCode,
 			RepBody:   normalizeJSON(rw.body.Bytes(), rw.Header().Get("Content-Encoding") == "gzip"),
+			Cookie:    r.Header.Get("Cookie"),
 		})
 	})
 }
