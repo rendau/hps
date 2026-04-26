@@ -21,7 +21,7 @@ func New(host, topic string) *Service {
 		Addr:                   kafka.TCP(host),
 		Topic:                  topic,
 		RequiredAcks:           kafka.RequireOne,
-		Async:                  false,
+		Async:                  true,
 		AllowAutoTopicCreation: true,
 	}
 

@@ -20,20 +20,6 @@ type Middleware struct {
 }
 
 func New(producer producerI, filter filterI) *Middleware {
-	// if host == "" || topic == "" {
-	// 	return &Middleware{}
-	// }
-	//
-	// return &Middleware{
-	// 	writer: &kafka.Writer{
-	// 		Addr:                   kafka.TCP(host),
-	// 		Topic:                  topic,
-	// 		AllowAutoTopicCreation: true,
-	// 		Async:                  true,
-	// 	},
-	// 	filterRules: parseFilterRules(filterRules),
-	// }
-
 	return &Middleware{
 		producer: producer,
 		filter:   filter,
