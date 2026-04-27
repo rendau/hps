@@ -65,8 +65,8 @@ func (a *App) Init() {
 		Addr:              ":" + conf.HttpPort,
 		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
-		ReadTimeout:       2 * time.Minute,
-		MaxHeaderBytes:    300 * 1024,
+		// ReadTimeout: 2 * time.Minute,
+		// MaxHeaderBytes: 300 * 1024,
 	}
 
 	// health check server
